@@ -99,9 +99,37 @@ const updateEmergencyDashboard = async (req, res) => {
 };
 
 // Update a record with officer_id
+// const updateOfficerId = async (req, res) => {
+//   const { id } = req.params;
+//   const { officer_id } = req.body;
+
+//   try {
+//     const result = await pool.query(
+//       "UPDATE emergency SET officer_id = $1 WHERE id = $2 RETURNING *",
+//       [officer_id, id]
+//     );
+
+//     if (result.rowCount === 0) {
+//       return res.status(404).json({ error: "Record not found" });
+//     }
+
+//     res
+//       .status(200)
+//       .json({ message: "Officer assigned successfully", data: result.rows[0] });
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).json({ error: "Failed to assign officer" });
+//   }
+// };
+
 const updateOfficerId = async (req, res) => {
   const { id } = req.params;
   const { officer_id } = req.body;
+
+  // Validate input
+  if (!id || !officer_id) {
+    return res.status(400).json({ error: "Invalid input data" });
+  }
 
   try {
     const result = await pool.query(
@@ -110,15 +138,16 @@ const updateOfficerId = async (req, res) => {
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Record not found" });
+      console.error("Record not found for ID:", id);
+      return res.status(404).json({ error: "Emergency record not found" });
     }
 
     res
       .status(200)
       .json({ message: "Officer assigned successfully", data: result.rows[0] });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: "Failed to assign officer" });
+  } catch (error) {
+    console.error("Error details:", error);
+    res.status(500).json({ error: "Failed to update assign Officer" });
   }
 };
 

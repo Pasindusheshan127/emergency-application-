@@ -5,11 +5,14 @@ const EmergencyStationAssingDashboard = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    const fetchData = async (req, res) => {
+    const fetchData = async () => {
       try {
         const response = await axios.get("http://localhost:5000/api/data");
         if (response.status === 200) {
-          setData(response.data);
+          const filteredData = response.data.filter(
+            (item) => item.dashboard !== "" && item.dashboard !== null
+          );
+          setData(filteredData);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -39,10 +42,10 @@ const EmergencyStationAssingDashboard = () => {
             </thead>
             <tbody className="">
               {data.map((row) => (
-                <tr key={row.emergency_id}>
-                  <td className="px-6 py-4 ">{row.emergency_id}</td>
-                  <td className="px-6 py-4 ">{/* user id */}</td>
-                  <td className="px-6 py-4 ">{row.created_time}</td>
+                <tr key={row.id}>
+                  <td className="px-6 py-4 ">{row.id}</td>
+                  <td className="px-6 py-4 ">{row.user_id}</td>
+                  <td className="px-6 py-4 ">{row.updated_time}</td>
                   <td className="px-6 py-4 ">{row.dashboard}</td>
                 </tr>
               ))}

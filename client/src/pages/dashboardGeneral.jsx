@@ -17,11 +17,10 @@ const GeneralDashboard = () => {
       try {
         const response = await axios.get("http://localhost:5000/api/data");
         if (response.status === 200) {
-          const enrichedData = response.data.map((row) => ({
-            ...row,
-            dashboard: "", // Add a dashboard field for dropdown selection
-          }));
-          setData(enrichedData);
+          const filterData = response.data.filter(
+            (row) => row.dashboard === "" || row.dashboard === null
+          );
+          setData(filterData);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -66,6 +65,7 @@ const GeneralDashboard = () => {
   };
 
   const handleUpdate = async (row) => {
+    console.log(row.dashboard);
     if (!row.dashboard) {
       alert("Please select a dashboard.");
       return;
@@ -114,7 +114,7 @@ const GeneralDashboard = () => {
                 </td>
                 <td className="px-6 py-4">
                   <select
-                    value={row.dashboard}
+                    value=""
                     onChange={(e) =>
                       handleDropdownChange(row.id, e.target.value)
                     }

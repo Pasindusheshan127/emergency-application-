@@ -6,6 +6,7 @@ const {
   updateEmergencyDashboard,
   getDashboardAData,
   getDashboardBData,
+  updateOfficerId,
 } = require("../controllers/userController");
 
 const router = express.Router();
@@ -26,10 +27,12 @@ router.delete("/data/:id", deleteEmergency);
 // PUT: Update the dashboard column
 router.put("/data/:id", updateEmergencyDashboard);
 
+//Put : assign officer_Id
+router.put("/data/assign-officer/:id", updateOfficerId);
 // Add the route to update officer_id
-router.put(
-  "/emergency/assign-officer/:id",
-  emergencyController.updateOfficerId
-);
+// router.put(
+//   "/emergency/assign-officer/:id",
+//   emergencyController.updateOfficerId
+// );
 
 module.exports = router;

@@ -11,6 +11,7 @@ import Maindashboard from "./pages/maindashboard";
 import StaionWiseDashboard from "./pages/staionWiseDashboard";
 import EmergencyStationAssingDashboard from "./pages/emergencyStationAssignDashboard";
 import StationOfficerAssign from "./pages/stationOfficerAssign";
+import TestPage from "./pages/testpage";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           path="/dashboard-officerAccessing"
           element={<StationOfficerAssign />}
         />
+        <Route path="/testpage" element={<TestPage />} />
       </Routes>
     </Router>
   );

@@ -20,7 +20,9 @@ const DashboardA = () => {
         if (response.status === 200) {
           // Filter for only records that belong to DashboardA
           const dashboardAData = response.data.filter(
-            (row) => row.dashboard === "dashboardA" && row.officer_id !== ""
+            (row) =>
+              row.dashboard === "dashboardA" &&
+              (row.officer_id === "" || row.officer_id === null)
           );
           setData(dashboardAData);
         }
@@ -41,19 +43,19 @@ const DashboardA = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/emergency/assign-officer/${id}`,
+        `http://localhost:5000/api/data/assign-officer/${id}`,
         { officer_id: selectedOfficerId }
       );
 
       if (response.status === 200) {
         setData((prevData) =>
           prevData.map((row) =>
-            row.id === id
-              ? { ...row, officer_id: selectedOfficerId, timer: "" }
-              : row
+            row.id === id ? { ...row, officer_id: selectedOfficerId } : row
           )
         );
+
         alert("Officer assigned successfully.");
+        window.location.reload();
       }
     } catch (error) {
       console.log("Error assigning officer:", error);

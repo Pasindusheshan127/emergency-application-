@@ -63,25 +63,28 @@ const HomePage = () => {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Home Page</h1>
-      <input
-        type="text"
-        placeholder="Enter your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ margin: "10px", padding: "10px", width: "200px" }}
-      />
-      <br />
-      <input
-        type="text"
-        placeholder="Enter your phone number"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        style={{ margin: "10px", padding: "10px", width: "200px" }}
-      />
-      <br />
-      <button onClick={handleEmergency} style={{ padding: "10px 20px" }}>
+    <div className="h-screen flex flex-col justify-center items-center bg-gray-100">
+      <h1 className="text-2xl mb-6">Emergency Center</h1>
+      <div className="flex flex-col items-center w-full">
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={name}
+          className="mb-4 w-1/3 py-2 text-center border border-black rounded-md"
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Enter your phone number"
+          value={phone}
+          className="mb-6 w-1/3 py-2 text-center border border-black rounded-md"
+          onChange={(e) => setPhone(e.target.value)}
+        />
+      </div>
+      <button
+        onClick={handleEmergency}
+        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
+      >
         Emergency
       </button>
     </div>
