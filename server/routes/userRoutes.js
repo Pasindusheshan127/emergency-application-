@@ -26,4 +26,10 @@ router.delete("/data/:id", deleteEmergency);
 // PUT: Update the dashboard column
 router.put("/data/:id", updateEmergencyDashboard);
 
+// Add the route to update officer_id
+router.put(
+  "/emergency/assign-officer/:id",
+  emergencyController.updateOfficerId
+);
+
 module.exports = router;

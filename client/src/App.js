@@ -6,6 +6,11 @@ import HomePage from "./pages/home";
 import GeneralDashboard from "./pages/dashboardGeneral";
 import DashboardA from "./pages/dashboardA";
 import DashboardB from "./pages/dashboardB";
+import Maindashboard from "./pages/maindashboard";
+
+import StaionWiseDashboard from "./pages/staionWiseDashboard";
+import EmergencyStationAssingDashboard from "./pages/emergencyStationAssignDashboard";
+import StationOfficerAssign from "./pages/stationOfficerAssign";
 
 function App() {
   return (
@@ -15,6 +20,19 @@ function App() {
         <Route path="/dashboard-general" element={<GeneralDashboard />} />
         <Route path="/dashboardA" element={<DashboardA />} />
         <Route path="/dashboardB" element={<DashboardB />} />
+        <Route path="/dashboard-main" element={<Maindashboard />} />
+        <Route
+          path="/dashboard-stationAccessing"
+          element={<EmergencyStationAssingDashboard />}
+        />
+        <Route
+          path="/dashboard-stationWise"
+          element={<StaionWiseDashboard />}
+        />
+        <Route
+          path="/dashboard-officerAccessing"
+          element={<StationOfficerAssign />}
+        />
       </Routes>
     </Router>
   );

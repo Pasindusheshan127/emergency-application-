@@ -1,7 +1,6 @@
 const pool = require("../models/db");
 
 // Insert a new record
-// Insert a new record
 const createEmergency = async (req, res) => {
   const { name, phone, locationX, locationY } = req.body;
   // console.log(req.body);
@@ -10,7 +9,7 @@ const createEmergency = async (req, res) => {
 
   try {
     const result = await pool.query(
-      "INSERT INTO emergency (name, phone, locationX, locationY, time) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      "INSERT INTO emergency (name, phone, locationX, locationY, created_time) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [name, phone, locationX, locationY, time]
     );
     res.status(201).json(result.rows[0]);
@@ -24,7 +23,7 @@ const createEmergency = async (req, res) => {
 const getEmergencies = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM emergency ORDER BY time DESC"
+      "SELECT * FROM emergency ORDER BY created_time DESC"
     );
     res.status(200).json(result.rows); // Ensure 'timer' is part of this response
   } catch (err) {
@@ -37,7 +36,7 @@ const getEmergencies = async (req, res) => {
 const getDashboardAData = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM emergency WHERE dashboard = 'dashboardA' ORDER BY time DESC"
+      "SELECT * FROM emergency WHERE dashboard = 'dashboardA' ORDER BY created_time DESC"
     );
     res.status(200).json(result.rows);
   } catch (err) {
@@ -50,7 +49,7 @@ const getDashboardAData = async (req, res) => {
 const getDashboardBData = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT * FROM emergency WHERE dashboard = 'dashboardB' ORDER BY time DESC"
+      "SELECT * FROM emergency WHERE dashboard = 'dashboardB' ORDER BY created_time DESC"
     );
     res.status(200).json(result.rows);
   } catch (err) {
@@ -99,6 +98,30 @@ const updateEmergencyDashboard = async (req, res) => {
   }
 };
 
+// Update a record with officer_id
+const updateOfficerId = async (req, res) => {
+  const { id } = req.params;
+  const { officer_id } = req.body;
+
+  try {
+    const result = await pool.query(
+      "UPDATE emergency SET officer_id = $1 WHERE id = $2 RETURNING *",
+      [officer_id, id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Record not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Officer assigned successfully", data: result.rows[0] });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Failed to assign officer" });
+  }
+};
+
 module.exports = {
   createEmergency,
   getEmergencies,
@@ -106,4 +129,5 @@ module.exports = {
   updateEmergencyDashboard,
   getDashboardAData,
   getDashboardBData,
+  updateOfficerId,
 };

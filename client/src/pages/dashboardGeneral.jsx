@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-// import { useNavigate } from "react-router-dom";
 
 const GeneralDashboard = () => {
   const [data, setData] = useState([]);
-  const [selectedDashboard, setSelectedDashboard] = useState({});
-  // const navigate = useNavigate();
 
-  // Calculate elapsed time based on current time and created_time
   const calculateElapsedTime = (createdTime) => {
     const total = Date.parse(new Date()) - Date.parse(createdTime);
     const seconds = Math.floor((total / 1000) % 60);
@@ -21,7 +17,11 @@ const GeneralDashboard = () => {
       try {
         const response = await axios.get("http://localhost:5000/api/data");
         if (response.status === 200) {
-          setData(response.data);
+          const enrichedData = response.data.map((row) => ({
+            ...row,
+            dashboard: "", // Add a dashboard field for dropdown selection
+          }));
+          setData(enrichedData);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -37,7 +37,7 @@ const GeneralDashboard = () => {
       setData((prevData) =>
         prevData.map((row) => {
           const { total, hours, minutes, seconds } = calculateElapsedTime(
-            row.time
+            row.created_time
           );
 
           if (total <= 0) {
@@ -57,25 +57,26 @@ const GeneralDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDashboardSelection = (id, dashboard) => {
-    setSelectedDashboard((prev) => ({ ...prev, [id]: dashboard }));
+  const handleDropdownChange = (id, value) => {
+    setData((prevData) =>
+      prevData.map((row) =>
+        row.id === id ? { ...row, dashboard: value } : row
+      )
+    );
   };
 
   const handleUpdate = async (row) => {
-    const targetDashboard = selectedDashboard[row.id];
-
-    if (!targetDashboard) {
+    if (!row.dashboard) {
       alert("Please select a dashboard.");
       return;
     }
 
     try {
       await axios.put(`http://localhost:5000/api/data/${row.id}`, {
-        dashboard: targetDashboard,
+        dashboard: row.dashboard,
       });
 
       setData((prevData) => prevData.filter((item) => item.id !== row.id));
-      // navigate(`/${targetDashboard.toLowerCase()}`);
     } catch (error) {
       console.error("Error updating data:", error);
       alert("Failed to update dashboard. Please try again.");
@@ -83,51 +84,58 @@ const GeneralDashboard = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>General Dashboard</h1>
-      <table border="1" style={{ width: "100%", textAlign: "center" }}>
-        <thead>
-          <tr>
-            <th>Timer</th>
-            <th>Name</th>
-            <th>Location</th>
-            <th>Phone Number</th>
-            <th>Time</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row) => (
-            <tr key={row.id}>
-              <td>{row.timer || "Calculating..."}</td>
-              <td>{row.name}</td>
-              <td>
-                {row.locationx}, {row.locationy}
-              </td>
-              <td>{row.phone}</td>
-              <td>{new Date(row.created_time).toLocaleString()}</td>
-              <td>
-                <select
-                  value={selectedDashboard[row.id] || ""}
-                  onChange={(e) =>
-                    handleDashboardSelection(row.id, e.target.value)
-                  }
-                >
-                  <option value="">Select</option>
-                  <option value="dashboardA">Dashboard A</option>
-                  <option value="dashboardB">Dashboard B</option>
-                </select>
-                <button
-                  onClick={() => handleUpdate(row)}
-                  style={{ marginLeft: "10px" }}
-                >
-                  Update
-                </button>
-              </td>
+    <div className="p-6 bg-gray-100">
+      <h1 className="text-3xl font-semibold text-center mb-6">
+        General Dashboard
+      </h1>
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border-collapse border border-gray-300">
+          <thead className="bg-gray-800 text-white">
+            <tr>
+              <th className="px-6 py-3 text-left">Timer</th>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Location</th>
+              <th className="px-6 py-3 text-left">Phone Number</th>
+              <th className="px-6 py-3 text-left">Time</th>
+              <th className="px-6 py-3 text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white">
+            {data.map((row) => (
+              <tr key={row.id} className="border-t hover:bg-gray-50">
+                <td className="px-6 py-4">{row.timer || "Calculating..."}</td>
+                <td className="px-6 py-4">{row.name}</td>
+                <td className="px-6 py-4">
+                  {row.locationx}, {row.locationy}
+                </td>
+                <td className="px-6 py-4">{row.phone}</td>
+                <td className="px-6 py-4">
+                  {new Date(row.created_time).toLocaleString()}
+                </td>
+                <td className="px-6 py-4">
+                  <select
+                    value={row.dashboard}
+                    onChange={(e) =>
+                      handleDropdownChange(row.id, e.target.value)
+                    }
+                    className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select</option>
+                    <option value="dashboardA">Dashboard A</option>
+                    <option value="dashboardB">Dashboard B</option>
+                  </select>
+                  <button
+                    onClick={() => handleUpdate(row)}
+                    className="ml-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
+                  >
+                    Update
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
