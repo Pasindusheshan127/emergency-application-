@@ -3,6 +3,7 @@ import axios from "axios";
 
 const GeneralDashboard = () => {
   const [data, setData] = useState([]);
+  const [audio] = useState(new Audio("/level-up.mp3"));
 
   const calculateElapsedTime = (createdTime) => {
     const total = Date.parse(new Date()) - Date.parse(createdTime);
@@ -10,6 +11,11 @@ const GeneralDashboard = () => {
     const minutes = Math.floor((total / 1000 / 60) % 60);
     const hours = Math.floor((total / 1000 / 60 / 60) % 24);
     return { total, hours, minutes, seconds };
+  };
+
+  //Play audio function
+  const playAudio = () => {
+    audio.play();
   };
 
   useEffect(() => {
@@ -77,6 +83,9 @@ const GeneralDashboard = () => {
       });
 
       setData((prevData) => prevData.filter((item) => item.id !== row.id));
+
+      // Play audio when the update is successful
+      playAudio();
     } catch (error) {
       console.error("Error updating data:", error);
       alert("Failed to update dashboard. Please try again.");

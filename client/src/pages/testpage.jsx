@@ -1,91 +1,185 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import axios from "axios";
 
-const TestPage = () => {
-  // Dummy data without section values
-  const [data, setData] = useState([
-    { id: 1, name: "John Doe", phone: "123-456-7890" },
-    { id: 2, name: "Jane Smith", phone: "987-654-3210" },
-    { id: 3, name: "Alice Johnson", phone: "555-666-7777" },
-  ]);
+const DashboardA = () => {
+  const [data, setData] = useState([]);
+  const [selectedOfficerId, setSelectedOfficerId] = useState("");
+  const [isAlertVisible, setAlertVisible] = useState(false); // Alert visibility state
+  const audio = useRef(new Audio("/alert.mp3")); // Use ref for the audio instance
+  const previousDataCount = useRef(0); // Track previous row count
 
-  const sections = ["A", "B", "C", "D"]; // Options for the dropdown
-
-  // Handle the update button click
-  const handleUpdate = (id, selectedSection) => {
-    alert(`Updated ID ${id} to section ${selectedSection}`);
+  const calculateElapsedTime = (updatedTime) => {
+    const total = Date.parse(new Date()) - Date.parse(updatedTime);
+    const seconds = Math.floor((total / 1000) % 60);
+    const minutes = Math.floor((total / 1000 / 60) % 60);
+    const hours = Math.floor((total / 1000 / 60 / 60) % 24);
+    return { total, hours, minutes, seconds };
   };
 
+  // Fetch data and handle logic for new rows
+  const fetchData = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/data");
+      if (response.status === 200) {
+        // Filter for only records that belong to DashboardA
+        const dashboardAData = response.data.filter(
+          (row) =>
+            row.dashboard === "dashboardA" &&
+            (row.officer_id === "" || row.officer_id === null)
+        );
+        setData(dashboardAData);
+
+        // Check for new rows
+        if (dashboardAData.length > previousDataCount.current) {
+          // New rows detected
+          audio.current.play().catch((error) => {
+            console.error("Audio playback error: ", error);
+          });
+          setAlertVisible(true); // Show alert/modal
+
+          // Update previous data count only if the new rows have been processed
+          previousDataCount.current = dashboardAData.length;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Failed to load data. Please try again.");
+    }
+  };
+
+  // Auto-refresh every 30 seconds without refreshing the entire page
+  useEffect(() => {
+    fetchData(); // Initial fetch
+
+    const interval = setInterval(() => {
+      fetchData(); // Fetch again every 30 seconds
+    }, 30000);
+
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, []);
+
+  const handleAlertClose = () => {
+    audio.current.pause(); // Stop the audio
+    audio.current.currentTime = 0; // Reset the audio
+    setAlertVisible(false); // Hide the alert
+  };
+
+  const handleAssignOfficer = async (id) => {
+    if (!selectedOfficerId) {
+      alert("Please select an officer.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/data/assign-officer/${id}`,
+        { officer_id: selectedOfficerId }
+      );
+
+      if (response.status === 200) {
+        setData((prevData) =>
+          prevData.map((row) =>
+            row.id === id ? { ...row, officer_id: selectedOfficerId } : row
+          )
+        );
+
+        alert("Officer assigned successfully.");
+        window.location.reload();
+      }
+    } catch (error) {
+      console.log("Error assigning officer:", error);
+      alert("Failed to assign officer.");
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setData((prevData) =>
+        prevData.map((row) => {
+          const { total, hours, minutes, seconds } = calculateElapsedTime(
+            row.updated_time
+          );
+
+          if (total <= 0) {
+            return { ...row, timer: "Expired" };
+          }
+
+          return {
+            ...row,
+            timer: `${hours > 9 ? hours : "0" + hours}:${
+              minutes > 9 ? minutes : "0" + minutes
+            }:${seconds > 9 ? seconds : "0" + seconds}`,
+          };
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-center mb-6">
-        React Table with Dropdown
-      </h1>
-      <table className="min-w-full table-auto border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 px-4 py-2 text-left">ID</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">Name</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
-              Phone
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
-              Section
-            </th>
-            <th className="border border-gray-300 px-4 py-2 text-left">
-              Action
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50">
-              <td className="border border-gray-300 px-4 py-2">{item.id}</td>
-              <td className="border border-gray-300 px-4 py-2">{item.name}</td>
-              <td className="border border-gray-300 px-4 py-2">{item.phone}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                <select
-                  onChange={(e) =>
-                    setData((prevData) =>
-                      prevData.map((row) =>
-                        row.id === item.id
-                          ? { ...row, section: e.target.value }
-                          : row
-                      )
-                    )
-                  }
-                  defaultValue=""
-                  className="px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="" disabled>
-                    Select Section
-                  </option>
-                  {sections.map((sec) => (
-                    <option key={sec} value={sec}>
-                      {sec}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="border border-gray-300 px-4 py-2">
-                <button
-                  onClick={() =>
-                    handleUpdate(
-                      item.id,
-                      data.find((row) => row.id === item.id)?.section ||
-                        "Not Selected"
-                    )
-                  }
-                  className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  Update
-                </button>
-              </td>
+    <div className="p-6 bg-white text-black">
+      <h1 className="text-3xl font-bold text-center mb-8">Dashboard A</h1>
+
+      {isAlertVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+            <h2 className="text-xl font-bold mb-4">New Record Added!</h2>
+            <p className="mb-6">A new row has been added to the table.</p>
+            <button
+              onClick={handleAlertClose}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border-separate border-spacing-0">
+          <thead className="bg-gray-800 text-white">
+            <tr>
+              <th className="px-6 py-3 text-left">Timer</th>
+              <th className="px-6 py-3 text-left">Name</th>
+              <th className="px-6 py-3 text-left">Location</th>
+              <th className="px-6 py-3 text-left">Phone Number</th>
+              <th className="px-6 py-3 text-left">Updated Time</th>
+              <th className="px-6 py-3 text-left">Assign Officer</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <tr key={row.id} className="border-t hover:bg-gray-100">
+                <td className="px-6 py-4">{row.timer || "Calculating..."}</td>
+                <td className="px-6 py-4">{row.name}</td>
+                <td className="px-6 py-4">
+                  {row.locationx}, {row.locationy}
+                </td>
+                <td className="px-6 py-4">{row.phone}</td>
+                <td className="px-6 py-4">
+                  {new Date(row.updated_time).toLocaleString()}
+                </td>
+                <td className="px-6 py-4">
+                  <input
+                    type="text"
+                    placeholder="Enter officer_id"
+                    onChange={(e) => setSelectedOfficerId(e.target.value)}
+                  />
+                  <button
+                    className="border border-black px-2 rounded-lg"
+                    onClick={() => handleAssignOfficer(row.id)}
+                  >
+                    Assign
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
-export default TestPage;
+export default DashboardA;

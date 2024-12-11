@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 
 const DashboardA = () => {
   const [data, setData] = useState([]);
   const [selectedOfficerId, setSelectedOfficerId] = useState("");
+  const [isAlertVisible, setAlertVisible] = useState(false);
+  const audio = useRef(new Audio("/alert.mp3"));
+  const previousDataCount = useRef(0);
+  const previousData = useRef([]);
 
   const calculateElapsedTime = (updatedTime) => {
     const total = Date.parse(new Date()) - Date.parse(updatedTime);
@@ -13,27 +17,65 @@ const DashboardA = () => {
     return { total, hours, minutes, seconds };
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/data");
-        if (response.status === 200) {
-          // Filter for only records that belong to DashboardA
-          const dashboardAData = response.data.filter(
-            (row) =>
-              row.dashboard === "dashboardA" &&
-              (row.officer_id === "" || row.officer_id === null)
-          );
-          setData(dashboardAData);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        alert("Failed to load data. Please try again.");
-      }
-    };
+  // Fetch data and handle logic for new rows
+  const fetchData = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/data");
+      if (response.status === 200) {
+        // Filter for only records that belong to DashboardA
+        const dashboardAData = response.data.filter(
+          (row) =>
+            row.dashboard === "dashboardA" &&
+            (row.officer_id === "" || row.officer_id === null)
+        );
+        setData(dashboardAData);
 
-    fetchData();
-  }, []);
+        // Check for new rows
+        if (dashboardAData.length > previousDataCount.current) {
+          // New rows detected
+          audio.current.play().catch((error) => {
+            console.error("Audio playback error: ", error);
+          });
+          if (!isAlertVisible) {
+            // Ensure the alert only shows when it's not already visible
+            setAlertVisible(true); // Show alert/modal
+          }
+
+          // Update previous data count only if the new rows have been processed
+          previousDataCount.current = dashboardAData.length;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Failed to load data. Please try again.");
+    }
+  };
+
+  useEffect(() => {
+    fetchData(); // Initial fetch
+
+    const interval = setInterval(() => {
+      fetchData(); // Fetch again every 30 seconds
+    }, 30000);
+
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, []); // Empty dependency array ensures this effect only runs once
+
+  useEffect(() => {
+    if (isAlertVisible) {
+      // Automatically hide the alert after 5 seconds
+      const timer = setTimeout(() => {
+        setAlertVisible(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAlertVisible]);
+
+  const handleAlertClose = () => {
+    audio.current.pause();
+    audio.current.currentTime = 0;
+    setAlertVisible(false);
+  };
 
   const handleAssignOfficer = async (id) => {
     if (!selectedOfficerId) {
@@ -91,6 +133,22 @@ const DashboardA = () => {
   return (
     <div className="p-6 bg-white text-black">
       <h1 className="text-3xl font-bold text-center mb-8">Dashboard A</h1>
+
+      {isAlertVisible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+            <h2 className="text-xl font-bold mb-4">New Record Added!</h2>
+            <p className="mb-6">A new row has been added to the table.</p>
+            <button
+              onClick={handleAlertClose}
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto border-separate border-spacing-0">
           <thead className="bg-gray-800 text-white">
